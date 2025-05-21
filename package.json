@@ -1,5 +1,5 @@
 {
-  "name": "psync",
+  "name": "sb-psync",
   "version": "1.0.0",
   "bin": {
     "psync": "./bin/psync.js"
@@ -17,10 +17,10 @@
   "description": "Personal sync tool for syncing files and directories to S3",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.535.0",
-    "chalk": "^5.4.1",
-    "fast-glob": "^3.3.3",
-    "yargs": "^17.7.2",
     "archiver": "^6.0.1",
-    "extract-zip": "^2.0.1"
+    "chalk": "^5.4.1",
+    "extract-zip": "^2.0.1",
+    "fast-glob": "^3.3.3",
+    "yargs": "^17.7.2"
   }
 }
