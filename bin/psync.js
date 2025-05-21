@@ -5,7 +5,7 @@ const { push } = require("../lib/push");
 const { pull } = require("../lib/pull");
 const config = require("../lib/config");
 const ProjectManager = require("../lib/project-manager");
-const { default: chalk } = require("chalk");
+const chalk = require("chalk");
 const readline = require("readline");
 
 const rl = readline.createInterface({
