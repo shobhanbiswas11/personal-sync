@@ -1,0 +1,26 @@
+{
+  "name": "psync",
+  "version": "1.0.0",
+  "bin": {
+    "psync": "./bin/psync.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "sync",
+    "s3",
+    "backup"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "Personal sync tool for syncing files and directories to S3",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "chalk": "^5.4.1",
+    "fast-glob": "^3.3.3",
+    "yargs": "^17.7.2",
+    "archiver": "^6.0.1",
+    "extract-zip": "^2.0.1"
+  }
+}
