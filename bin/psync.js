@@ -6,6 +6,22 @@ const { pull } = require("../lib/pull");
 const config = require("../lib/config");
 const ProjectManager = require("../lib/project-manager");
 const { default: chalk } = require("chalk");
+const readline = require("readline");
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+const question = (query) =>
+  new Promise((resolve) => rl.question(query, resolve));
+
+// Helper function to safely close readline
+const safeClose = () => {
+  if (rl && rl.close) {
+    rl.close();
+  }
+};
 
 yargs
   .command(
@@ -21,8 +37,10 @@ yargs
       try {
         const projectManager = new ProjectManager(argv.dir);
         await projectManager.init();
+        safeClose();
       } catch (error) {
         console.error("Error:", error.message);
+        safeClose();
         process.exit(1);
       }
     }
@@ -45,8 +63,10 @@ yargs
       try {
         const projectManager = new ProjectManager(argv.dir);
         await projectManager.clone(argv.projectId);
+        safeClose();
       } catch (error) {
         console.error("Error:", error.message);
+        safeClose();
         process.exit(1);
       }
     }
@@ -77,8 +97,10 @@ yargs
           ignorePsyncignore: argv.ignorePsyncignore,
           include: argv.include,
         });
+        safeClose();
       } catch (error) {
         console.error("Error:", error.message);
+        safeClose();
         process.exit(1);
       }
     }
@@ -95,78 +117,68 @@ yargs
     async (argv) => {
       try {
         await pull(argv.dir);
+        safeClose();
       } catch (error) {
         console.error("Error:", error.message);
+        safeClose();
         process.exit(1);
       }
     }
   )
   .command(
     "config",
-    "Configure psync settings",
-    (yargs) => {
-      yargs
-        .option("global", {
-          describe: "Configure global settings",
-          type: "boolean",
-          default: false,
-        })
-        .option("aws-access-key", {
-          describe: "AWS Access Key ID",
-          type: "string",
-        })
-        .option("aws-secret-key", {
-          describe: "AWS Secret Access Key",
-          type: "string",
-        })
-        .option("aws-region", {
-          describe: "AWS Region",
-          type: "string",
-          default: "ap-south-1",
-        })
-        .option("bucket", {
-          describe: "S3 Bucket name",
-          type: "string",
-        })
-        .option("project-name", {
-          describe: "Project name (for local config only)",
-          type: "string",
-        });
-    },
-    (argv) => {
+    "Configure psync settings (one-time setup)",
+    () => {},
+    async () => {
       try {
-        const configData = {};
-
-        if (argv.awsAccessKey || argv.awsSecretKey || argv.awsRegion) {
-          configData.aws = {
-            accessKeyId: argv.awsAccessKey,
-            secretAccessKey: argv.awsSecretKey,
-            region: argv.awsRegion,
-          };
+        // Check if already configured
+        const existingConfig = config.getGlobalConfig();
+        if (existingConfig.aws?.accessKeyId) {
+          const answer = await question(
+            chalk.yellow(
+              "AWS credentials already configured. Do you want to reconfigure? (y/N) "
+            )
+          );
+          if (answer.toLowerCase() !== "y") {
+            console.log(chalk.blue("Configuration unchanged."));
+            safeClose();
+            return;
+          }
         }
 
-        if (argv.bucket) {
-          configData.bucket = argv.bucket;
+        console.log(chalk.blue("\n🔧 PSync Configuration Setup\n"));
+        console.log(chalk.yellow("Please enter your AWS credentials:\n"));
+
+        const accessKeyId = await question(chalk.blue("AWS Access Key ID: "));
+        const secretAccessKey = await question(
+          chalk.blue("AWS Secret Access Key: ")
+        );
+        const region =
+          (await question(chalk.blue("AWS Region (default: ap-south-1): "))) ||
+          "ap-south-1";
+        const bucket = await question(chalk.blue("S3 Bucket Name: "));
+
+        if (!accessKeyId || !secretAccessKey || !bucket) {
+          console.error(chalk.red("Error: All fields are required."));
+          safeClose();
+          process.exit(1);
         }
 
-        if (argv.projectName) {
-          configData.projectName = argv.projectName;
-        }
+        const configData = {
+          aws: {
+            accessKeyId,
+            secretAccessKey,
+            region,
+          },
+          bucket,
+        };
 
-        if (Object.keys(configData).length === 0) {
-          console.log(chalk.yellow("No configuration options provided."));
-          return;
-        }
-
-        if (argv.global) {
-          config.setGlobalConfig(configData);
-          console.log(chalk.green("✅ Global configuration updated."));
-        } else {
-          config.setProjectConfig(configData);
-          console.log(chalk.green("✅ Project configuration updated."));
-        }
+        config.setGlobalConfig(configData);
+        console.log(chalk.green("\n✅ Configuration saved successfully!"));
+        safeClose();
       } catch (error) {
         console.error("Error:", error.message);
+        safeClose();
         process.exit(1);
       }
     }
