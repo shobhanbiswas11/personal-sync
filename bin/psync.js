@@ -102,10 +102,14 @@ yargs
     }
   )
   .command(
-    "push [dir]",
+    "push <project-name> [dir]",
     "Push files to S3",
     (yargs) => {
       yargs
+        .positional("project-name", {
+          describe: "Name of the project to push to",
+          type: "string",
+        })
         .positional("dir", {
           describe: "Directory to push",
           default: ".",
@@ -123,7 +127,7 @@ yargs
     },
     async (argv) => {
       try {
-        await push(argv.dir, {
+        await push(argv.dir, argv.projectName, {
           ignorePsyncignore: argv.ignorePsyncignore,
           include: argv.include,
         });
@@ -136,17 +140,23 @@ yargs
     }
   )
   .command(
-    "pull [dir]",
+    "pull <project-name> [dir]",
     "Pull files from S3",
     (yargs) => {
-      yargs.positional("dir", {
-        describe: "Directory to pull into",
-        default: ".",
-      });
+      yargs
+        .positional("project-name", {
+          describe: "Name of the project to pull",
+          type: "string",
+        })
+        .positional("dir", {
+          describe: "Directory to pull into",
+          default: ".",
+        });
     },
     async (argv) => {
       try {
-        await pull(argv.dir);
+        const projectManager = new ProjectManager(argv.dir);
+        await projectManager.pull(argv.projectName);
         safeClose();
       } catch (error) {
         console.error("Error:", error.message);
