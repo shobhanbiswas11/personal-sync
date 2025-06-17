@@ -25,18 +25,23 @@ const safeClose = () => {
 
 yargs
   .command(
-    "init [dir]",
+    "init <project-name> [dir]",
     "Initialize a new project",
     (yargs) => {
-      yargs.positional("dir", {
-        describe: "Directory to initialize",
-        default: ".",
-      });
+      yargs
+        .positional("project-name", {
+          describe: "Name of the project to initialize",
+          type: "string",
+        })
+        .positional("dir", {
+          describe: "Directory to initialize",
+          default: ".",
+        });
     },
     async (argv) => {
       try {
         const projectManager = new ProjectManager(argv.dir);
-        await projectManager.init();
+        await projectManager.init(argv.projectName);
         safeClose();
       } catch (error) {
         console.error("Error:", error.message);
@@ -46,12 +51,12 @@ yargs
     }
   )
   .command(
-    "clone <project-id> [dir]",
+    "clone <project-name> [dir]",
     "Clone an existing project",
     (yargs) => {
       yargs
-        .positional("project-id", {
-          describe: "Project ID to clone",
+        .positional("project-name", {
+          describe: "Name of the project to clone",
           type: "string",
         })
         .positional("dir", {
@@ -62,7 +67,32 @@ yargs
     async (argv) => {
       try {
         const projectManager = new ProjectManager(argv.dir);
-        await projectManager.clone(argv.projectId);
+        await projectManager.clone(argv.projectName);
+        safeClose();
+      } catch (error) {
+        console.error("Error:", error.message);
+        safeClose();
+        process.exit(1);
+      }
+    }
+  )
+  .command(
+    "list",
+    "List all available projects",
+    () => {},
+    async () => {
+      try {
+        const projectManager = new ProjectManager(".");
+        const projects = await projectManager.list();
+
+        if (projects.length === 0) {
+          console.log(chalk.yellow("No projects found."));
+        } else {
+          console.log(chalk.blue("\nAvailable projects:\n"));
+          projects.forEach((project, index) => {
+            console.log(chalk.green(`${index + 1}. ${project}`));
+          });
+        }
         safeClose();
       } catch (error) {
         console.error("Error:", error.message);
